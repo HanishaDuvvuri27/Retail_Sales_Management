@@ -54,7 +54,7 @@ const Dashboard = () => {
         setLoading(true);
         setError("");
 
-        // Parse age range into min/max
+        // Parse age range into Min/Max
         let ageMin = undefined;
         let ageMax = undefined;
         if (filters.ageRange) {
