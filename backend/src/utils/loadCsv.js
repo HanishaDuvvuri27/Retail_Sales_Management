@@ -2,7 +2,7 @@ const fs = require("fs");
 const path = require("path");
 const csv = require("csv-parser");
 
-/** Load and parse sales CSV into JS objects. */
+// Load and parse sales CSV into JS objects.
 function loadSalesData() {
   return new Promise((resolve, reject) => {
     const results = [];

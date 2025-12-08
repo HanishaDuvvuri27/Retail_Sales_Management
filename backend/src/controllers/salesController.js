@@ -39,18 +39,17 @@ async function handleGetSales(req, res) {
       dateFrom: dateFrom || null,
       dateTo: dateTo || null,
       sortBy: sortBy || "date",
-      sortOrder: sortOrder || "desc", // newest first
+      sortOrder: sortOrder || "desc",
       page: page ? Number(page) : 1,
       pageSize: pageSize ? Number(pageSize) : 10,
     };
 
-    // Ensure age range is valid
     if (
       options.ageMin != null &&
       options.ageMax != null &&
       options.ageMin > options.ageMax
     ) {
-      // swap values
+      const temp = options.ageMin;
       const temp = options.ageMin;
       options.ageMin = options.ageMax;
       options.ageMax = temp;
