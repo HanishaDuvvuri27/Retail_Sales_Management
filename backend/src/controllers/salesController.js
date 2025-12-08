@@ -1,4 +1,3 @@
-// src/controllers/salesController.js
 const { getSales } = require("../services/salesService");
 
 function parseListParam(value) {
@@ -40,18 +39,18 @@ async function handleGetSales(req, res) {
       dateFrom: dateFrom || null,
       dateTo: dateTo || null,
       sortBy: sortBy || "date",
-      sortOrder: sortOrder || "desc", // date newest first
+      sortOrder: sortOrder || "desc", // newest first
       page: page ? Number(page) : 1,
       pageSize: pageSize ? Number(pageSize) : 10,
     };
 
-    // Basic range sanity check
+    // Ensure age range is valid
     if (
       options.ageMin != null &&
       options.ageMax != null &&
       options.ageMin > options.ageMax
     ) {
-      // swap
+      // swap values
       const temp = options.ageMin;
       options.ageMin = options.ageMax;
       options.ageMax = temp;

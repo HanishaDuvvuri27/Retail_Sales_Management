@@ -1,4 +1,3 @@
-// src/services/salesService.js
 const { getSalesData } = require("../dataStore");
 
 function parseDate(dateStr) {
@@ -7,9 +6,7 @@ function parseDate(dateStr) {
   return isNaN(d.getTime()) ? null : d;
 }
 
-/**
- * Core function: applies search, filters, sort, pagination
- */
+// Core function: applies search, filters, sort, pagination
 function getSales(options) {
   const {
     search,
@@ -30,7 +27,7 @@ function getSales(options) {
 
   let data = getSalesData();
 
-  // ---- SEARCH (Customer Name, Phone Number) ----
+  // Search by customer name or phone
   if (search && search.trim() !== "") {
     const s = search.toLowerCase();
     data = data.filter((item) => {
@@ -40,7 +37,7 @@ function getSales(options) {
     });
   }
 
-  // ---- FILTERS ----
+  // Filters
 
   if (regions && regions.length > 0) {
     data = data.filter(
@@ -100,7 +97,7 @@ function getSales(options) {
 
       if (from && d < from) return false;
       if (to) {
-        // include end date
+        // include end date in range
         const end = new Date(to);
         end.setHours(23, 59, 59, 999);
         if (d > end) return false;
@@ -110,7 +107,7 @@ function getSales(options) {
     });
   }
 
-  // ---- SUMMARY (on filtered data, BEFORE pagination) ----
+  // Summary (before pagination)
   const totalItems = data.length;
 
   const summary = data.reduce(
@@ -133,7 +130,7 @@ function getSales(options) {
     }
   );
 
-  // ---- SORTING ----
+  // Sorting
   let sorted = [...data];
   const order = sortOrder === "asc" ? 1 : -1;
 
@@ -160,7 +157,7 @@ function getSales(options) {
     });
   }
 
-  // ---- PAGINATION ----
+  // Pagination
   const currentPage = page && page > 0 ? page : 1;
   const size = pageSize || 10;
   const startIndex = (currentPage - 1) * size;

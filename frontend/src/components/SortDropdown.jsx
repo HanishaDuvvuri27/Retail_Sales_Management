@@ -1,4 +1,4 @@
-// src/components/SortingDropdown.jsx
+ 
 import CustomSelect from "./CustomSelect";
 
 const SortingDropdown = ({ sort, onChange }) => {

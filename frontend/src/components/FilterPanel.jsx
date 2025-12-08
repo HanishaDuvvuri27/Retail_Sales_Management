@@ -1,11 +1,11 @@
-// src/components/FilterPanel.jsx
+ 
 import DateRangeFilter from "./DateRangeFilter";
 import CustomSelect from "./CustomSelect";
 
 const FilterPanel = ({ filters, onChange }) => {
   const handleSelect = (key, value) => {
     const next = { ...filters };
-    // for simplicity everything is single-select except date range
+    // Single-select controls except date range
     if (["regions", "genders", "categories", "tags", "paymentMethods"].includes(key)) {
       next[key] = value ? [value] : [];
     } else if (key === "ageRange") {

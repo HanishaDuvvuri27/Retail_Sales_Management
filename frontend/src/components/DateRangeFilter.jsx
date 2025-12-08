@@ -1,4 +1,4 @@
-// src/components/DateRangeFilter.jsx
+ 
 import { useState, useRef, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { FiCalendar } from "react-icons/fi";
@@ -36,7 +36,7 @@ const DateRangeFilter = ({ dateFrom, dateTo, onChange }) => {
     }
   }, [isOpen]);
 
-  // calculate popup position so it floats above all content (portal)
+  // Calculate popup position for viewport placement
   useEffect(() => {
     if (!isOpen) {
       setPopupStyle(null);
@@ -47,11 +47,11 @@ const DateRangeFilter = ({ dateFrom, dateTo, onChange }) => {
       if (!buttonRef.current) return;
       const rect = buttonRef.current.getBoundingClientRect();
 
-      // Use fixed positioning so the popup floats relative to the viewport
+      // Use fixed positioning so popup floats relative to viewport
       const top = rect.bottom + 8; // distance from viewport top
       let left = rect.left - 8; // nudge left a bit
 
-      // determine popup width (use measured width if available, otherwise fallback to CSS min-width)
+      // Determine popup width (measure or CSS fallback)
       const popupWidth = (popupRef.current && popupRef.current.offsetWidth) || 520;
 
       const minLeft = 8; // don't touch the very edge

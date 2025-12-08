@@ -1,4 +1,4 @@
-// src/components/CustomSelect.jsx
+ 
 import { useState, useRef, useEffect } from "react";
 import { createPortal } from "react-dom";
 
@@ -100,7 +100,7 @@ const CustomSelect = ({ value, onChange, options, placeholder, id }) => {
 
       {isOpen && popupStyle && (
         <>
-          {/* Transparent overlay */}
+          
           {createPortal(
             <div
               className="custom-select-overlay"
@@ -110,7 +110,7 @@ const CustomSelect = ({ value, onChange, options, placeholder, id }) => {
             document.body
           )}
 
-          {/* Dropdown menu */}
+          
           {createPortal(
             <div ref={popupRef} className="custom-select-dropdown" style={popupStyle}>
               {options.map((option) => (

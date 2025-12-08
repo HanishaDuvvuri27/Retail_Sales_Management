@@ -1,4 +1,4 @@
-// src/components/Pagination.jsx
+ 
 const Pagination = ({ page, totalPages, onPageChange }) => {
   return (
     <div className="pagination">

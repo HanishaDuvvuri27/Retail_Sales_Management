@@ -1,4 +1,4 @@
-// src/components/SearchBar.jsx
+ 
 import { FiSearch } from "react-icons/fi";
 
 const SearchBar = ({ value, onChange }) => {

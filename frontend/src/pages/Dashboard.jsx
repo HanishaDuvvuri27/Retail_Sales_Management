@@ -1,4 +1,3 @@
-// src/pages/Dashboard.jsx
 import { useEffect, useState, useRef } from "react";
 import Header from "../components/Header";
 import SearchBar from "../components/SearchBar";
@@ -49,7 +48,6 @@ const Dashboard = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  // Build query params and hit backend
   useEffect(() => {
     const load = async () => {
       try {
@@ -156,7 +154,7 @@ const Dashboard = () => {
 
   return (
     <div className="app-shell">
-      {/* Sidebar */}
+      
       <aside className="sidebar">
         <div
           className="sidebar-header"
@@ -264,7 +262,7 @@ const Dashboard = () => {
         </nav>
       </aside>
 
-      {/* Main content */}
+      
       <div className="main-content">
         <div className="page-header">
           <Header />
@@ -273,7 +271,7 @@ const Dashboard = () => {
           </div>
         </div>
 
-        {/* Filters, search, sort */}
+        
         <div className="filters-row">
           <div className="filters-left">
             <button
@@ -307,15 +305,15 @@ const Dashboard = () => {
           </div>
         </div>
 
-        {/* Summary cards */}
+        
         <SummaryCards summary={summary} />
 
-        {/* Table */}
+        
         <div className="table-card">
           <TransactionsTable rows={rows} loading={loading} error={error} />
         </div>
 
-        {/* Pagination */}
+        
         <div className="pagination-row">
           <Pagination page={page} totalPages={totalPages} onPageChange={handlePageChange} />
         </div>

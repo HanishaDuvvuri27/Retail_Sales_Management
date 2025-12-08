@@ -1,4 +1,4 @@
-// src/components/SummaryCards.jsx
+ 
 const formatCurrency = (value) =>
   new Intl.NumberFormat("en-IN", {
     style: "currency",

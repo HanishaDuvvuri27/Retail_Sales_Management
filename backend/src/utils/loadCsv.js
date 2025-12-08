@@ -1,12 +1,8 @@
-// src/utils/loadCsv.js
 const fs = require("fs");
 const path = require("path");
 const csv = require("csv-parser");
 
-/**
- * Load CSV and convert each row into a JS object
- * matching our header fields.
- */
+/** Load and parse sales CSV into JS objects. */
 function loadSalesData() {
   return new Promise((resolve, reject) => {
     const results = [];

@@ -1,4 +1,4 @@
-// src/components/Header.jsx
+ 
 const Header = () => {
   return (
     <header className="header">

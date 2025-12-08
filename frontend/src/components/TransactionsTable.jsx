@@ -1,4 +1,4 @@
-// src/components/TransactionsTable.jsx
+ 
 import { FiCopy } from "react-icons/fi";
 
 const TransactionsTable = ({ rows, loading, error }) => {
