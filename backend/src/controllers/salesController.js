@@ -50,12 +50,11 @@ async function handleGetSales(req, res) {
       options.ageMin > options.ageMax
     ) {
       const temp = options.ageMin;
-      const temp = options.ageMin;
       options.ageMin = options.ageMax;
       options.ageMax = temp;
     }
 
-    const result = getSales(options);
+    const result = await getSales(options);
     res.json(result);
   } catch (err) {
     console.error("Error in handleGetSales:", err);
