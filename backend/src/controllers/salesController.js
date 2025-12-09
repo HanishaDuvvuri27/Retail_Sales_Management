@@ -1,4 +1,9 @@
-const { getSales } = require("../services/salesService");
+const {
+  getSales,
+  getDistinctTags,
+  getDistinctPaymentMethods,
+  getDistinctCategories,
+} = require("../services/salesService");
 
 function parseListParam(value) {
   if (!value) return [];
@@ -62,6 +67,41 @@ async function handleGetSales(req, res) {
   }
 }
 
+async function handleGetTags(req, res) {
+  try {
+    const { categories } = req.query;
+    const categoryList = parseListParam(categories);
+    const tags = getDistinctTags(categoryList);
+    res.json({ tags });
+  } catch (err) {
+    console.error("Error in handleGetTags:", err);
+    res.status(500).json({ message: "Internal server error" });
+  }
+}
+
+async function handleGetPaymentMethods(req, res) {
+  try {
+    const methods = getDistinctPaymentMethods();
+    res.json({ paymentMethods: methods });
+  } catch (err) {
+    console.error("Error in handleGetPaymentMethods:", err);
+    res.status(500).json({ message: "Internal server error" });
+  }
+}
+
+async function handleGetCategories(req, res) {
+  try {
+    const categories = getDistinctCategories();
+    res.json({ categories });
+  } catch (err) {
+    console.error("Error in handleGetCategories:", err);
+    res.status(500).json({ message: "Internal server error" });
+  }
+}
+
 module.exports = {
   handleGetSales,
+  handleGetTags,
+  handleGetPaymentMethods,
+  handleGetCategories,
 };

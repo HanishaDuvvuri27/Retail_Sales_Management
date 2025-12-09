@@ -1,13 +1,8 @@
 const { getSalesData } = require("../dataStore");
 const { connectToDb } = require("../utils/db");
 
-/* -------------------------------------------------------
-   SMART parseDate — Works with:
-   - ISO (2025-01-10)
-   - YYYY-MM-DD
-   - DD/MM/YYYY
-   - timestamps
----------------------------------------------------------*/
+
+
 function parseDate(dateInput) {
   if (!dateInput) return null;
 
@@ -23,22 +18,22 @@ function parseDate(dateInput) {
 
   const s = String(dateInput).trim();
 
-  // ISO or native
+
   const iso = new Date(s);
   if (!isNaN(iso.getTime())) return iso;
 
-  // YYYY-MM-DD
+  
   const ymd = s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
   if (ymd) return new Date(+ymd[1], +ymd[2] - 1, +ymd[3]);
 
-  // DD/MM/YYYY
+  
   const dmy = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
   if (dmy) return new Date(+dmy[3], +dmy[2] - 1, +dmy[1]);
 
   return null;
 }
 
-/* Normalize front-end names */
+// Normalize front-end names 
 function normalizeOptions(o = {}) {
   o = { ...o };
   if (!o.dateFrom && o.fromDate) o.dateFrom = o.fromDate;
@@ -46,9 +41,7 @@ function normalizeOptions(o = {}) {
   return o;
 }
 
-/* -------------------------------------------------------
-      IN-MEMORY FILTER (same logic fixed)
----------------------------------------------------------*/
+
 function getSalesFromMemory(rawOptions) {
   const options = normalizeOptions(rawOptions);
   const {
@@ -104,9 +97,14 @@ function getSalesFromMemory(rawOptions) {
   }
 
   if (tags?.length) {
+    const filterTags = tags.map((t) => t.trim().toLowerCase()).filter(Boolean);
     data = data.filter((it) => {
-      const rowTags = it.tags?.split(",").map((t) => t.trim()) || [];
-      return rowTags.some((t) => tags.includes(t));
+      const rowTags =
+        it.tags
+          ?.split(",")
+          .map((t) => t.trim().toLowerCase())
+          .filter(Boolean) || [];
+      return rowTags.some((t) => filterTags.includes(t));
     });
   }
 
@@ -173,9 +171,51 @@ function getSalesFromMemory(rawOptions) {
   };
 }
 
-/* -------------------------------------------------------
-      MONGO FILTER (NO MIGRATION NEEDED)
----------------------------------------------------------*/
+function getDistinctTags(categories = []) {
+  const data = getSalesData();
+  const categorySet =
+    categories && categories.length
+      ? new Set(categories.map((c) => (c || "").toLowerCase()))
+      : null;
+
+  const tagSet = new Set();
+
+  data.forEach((item) => {
+    if (categorySet) {
+      const cat = (item.productCategory || "").toLowerCase();
+      if (!categorySet.has(cat)) return;
+    }
+    if (!item.tags) return;
+    item.tags
+      .split(",")
+      .map((t) => t.trim())
+      .filter(Boolean)
+      .forEach((t) => tagSet.add(t));
+  });
+
+  return Array.from(tagSet);
+}
+
+
+function getDistinctPaymentMethods() {
+  const data = getSalesData();
+  const set = new Set();
+  data.forEach((item) => {
+    if (item.paymentMethod) set.add(item.paymentMethod);
+  });
+  return Array.from(set);
+}
+
+function getDistinctCategories() {
+  const data = getSalesData();
+  const set = new Set();
+  data.forEach((item) => {
+    if (item.productCategory) set.add(item.productCategory);
+  });
+  return Array.from(set);
+}
+
+
 async function getSales(rawOptions) {
   const options = normalizeOptions(rawOptions);
   const {
@@ -220,24 +260,24 @@ async function getSales(rawOptions) {
       if (ageMax != null) match.Age.$lte = ageMax;
     }
 
-    // DATE RANGE FIX (works even if DB stores string dates)
+    // DATE RANGE FIX 
     if (dateFrom || dateTo) {
       const from = parseDate(dateFrom);
       const to = parseDate(dateTo);
 
       const end = to ? new Date(to.setHours(23, 59, 59, 999)) : null;
 
-      // 1️⃣ Filter BSON Date type
+      
       const bsonFilter = {};
       if (from) bsonFilter.$gte = from;
       if (end) bsonFilter.$lte = end;
 
-      // 2️⃣ Also filter string dates: "YYYY-MM-DD"
+      
       const strFilter = {};
       if (dateFrom) strFilter.$gte = dateFrom;
       if (dateTo) strFilter.$lte = dateTo;
 
-      // Combine both using $expr OR direct match
+    
       match.$or = [
         { Date: bsonFilter },
         { Date: strFilter },
@@ -280,4 +320,9 @@ async function getSales(rawOptions) {
   }
 }
 
-module.exports = { getSales };
+module.exports = {
+  getSales,
+  getDistinctTags,
+  getDistinctPaymentMethods,
+  getDistinctCategories,
+};

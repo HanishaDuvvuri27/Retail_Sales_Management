@@ -2,12 +2,21 @@
 import DateRangeFilter from "./DateRangeFilter";
 import CustomSelect from "./CustomSelect";
 
-const FilterPanel = ({ filters, onChange }) => {
+const FilterPanel = ({
+  filters,
+  onChange,
+  tagOptions = [],
+  paymentOptions = [],
+  categoryOptions = [],
+}) => {
   const handleSelect = (key, value) => {
     const next = { ...filters };
     // Single-select controls except date range
     if (["regions", "genders", "categories", "tags", "paymentMethods"].includes(key)) {
       next[key] = value ? [value] : [];
+      if (key === "categories") {
+        next.tags = [];
+      }
     } else if (key === "ageRange") {
       next.ageRange = value;
     }
@@ -73,12 +82,16 @@ const FilterPanel = ({ filters, onChange }) => {
           value={filters.categories[0] || ""}
           onChange={(value) => handleSelect("categories", value)}
           placeholder="Product Category"
-          options={[
-            { value: "", label: "Product Category" },
-            { value: "Clothing", label: "Clothing" },
-            { value: "Electronics", label: "Electronics" },
-            { value: "Grocery", label: "Grocery" },
-          ]}
+          options={
+            categoryOptions && categoryOptions.length
+              ? categoryOptions
+              : [
+                  { value: "", label: "Product Category" },
+                  { value: "Clothing", label: "Clothing" },
+                  { value: "Electronics", label: "Electronics" },
+                  { value: "Grocery", label: "Grocery" },
+                ]
+          }
         />
       </div>
 
@@ -88,12 +101,16 @@ const FilterPanel = ({ filters, onChange }) => {
           value={filters.tags[0] || ""}
           onChange={(value) => handleSelect("tags", value)}
           placeholder="Tags"
-          options={[
-            { value: "", label: "Tags" },
-            { value: "Sale", label: "Sale" },
-            { value: "New", label: "New" },
-            { value: "Seasonal", label: "Seasonal" },
-          ]}
+          options={
+            tagOptions && tagOptions.length
+              ? tagOptions
+              : [
+                  { value: "", label: "Tags" },
+                  { value: "Sale", label: "Sale" },
+                  { value: "New", label: "New" },
+                  { value: "Seasonal", label: "Seasonal" },
+                ]
+          }
         />
       </div>
 
@@ -103,12 +120,16 @@ const FilterPanel = ({ filters, onChange }) => {
           value={filters.paymentMethods[0] || ""}
           onChange={(value) => handleSelect("paymentMethods", value)}
           placeholder="Payment Method"
-          options={[
-            { value: "", label: "Payment Method" },
-            { value: "Card", label: "Card" },
-            { value: "Cash", label: "Cash" },
-            { value: "UPI", label: "UPI" },
-          ]}
+          options={
+            paymentOptions && paymentOptions.length
+              ? paymentOptions
+              : [
+                  { value: "", label: "Payment Method" },
+                  { value: "Card", label: "Card" },
+                  { value: "Cash", label: "Cash" },
+                  { value: "UPI", label: "UPI" },
+                ]
+          }
         />
       </div>
 

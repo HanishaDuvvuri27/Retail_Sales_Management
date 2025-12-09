@@ -1,4 +1,4 @@
-// Load sales data directly from MongoDB atlas `sales_db.sales` collection
+// Load sales data directly from MongoDB atlas sales_db.sales collection
 const { connectToDb } = require("./db");
 
 function extractNumber(val) {

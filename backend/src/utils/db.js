@@ -16,13 +16,13 @@ let _db = null;
 let _connecting = null;
 
 async function connectToDb() {
-  // If already connected, return cached db
+  
   if (_db) return _db;
   
-  // If currently connecting, wait for that promise
+  
   if (_connecting) return await _connecting;
 
-  // Start connection and cache the promise to prevent multiple simultaneous connections
+  
   _connecting = (async () => {
     try {
       await client.connect();

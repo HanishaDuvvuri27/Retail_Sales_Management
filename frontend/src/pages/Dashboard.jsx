@@ -7,7 +7,12 @@ import TransactionsTable from "../components/TransactionsTable";
 import SortingDropdown from "../components/SortDropdown";
 import Pagination from "../components/Pagination";
 import { FiHome, FiLink, FiInbox, FiFileText, FiRefreshCw } from "react-icons/fi";
-import { fetchSales } from "../services/api.js";
+import {
+  fetchSales,
+  fetchTags,
+  fetchPaymentMethods,
+  fetchCategories,
+} from "../services/api.js";
 
 import "../styles/dashboard.css";
 
@@ -47,6 +52,24 @@ const Dashboard = () => {
   const [totalPages, setTotalPages] = useState(1);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [tagOptions, setTagOptions] = useState([
+    { value: "", label: "Tags" },
+    { value: "Sale", label: "Sale" },
+    { value: "New", label: "New" },
+    { value: "Seasonal", label: "Seasonal" },
+  ]);
+  const [paymentOptions, setPaymentOptions] = useState([
+    { value: "", label: "Payment Method" },
+    { value: "Card", label: "Card" },
+    { value: "Cash", label: "Cash" },
+    { value: "UPI", label: "UPI" },
+  ]);
+  const [categoryOptions, setCategoryOptions] = useState([
+    { value: "", label: "Product Category" },
+    { value: "Clothing", label: "Clothing" },
+    { value: "Electronics", label: "Electronics" },
+    { value: "Grocery", label: "Grocery" },
+  ]);
 
   useEffect(() => {
     const load = async () => {
@@ -111,10 +134,10 @@ const Dashboard = () => {
     };
 
     load();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+
   }, [search, filters, sort, page]);
 
-  // close header dropdown when clicking outside the sidebar
+
   useEffect(() => {
     const handleClickOutside = (e) => {
       // Find the sidebar element
@@ -151,6 +174,93 @@ const Dashboard = () => {
       setPage(nextPage);
     }
   };
+
+  // Load tag options based on selected categories
+  useEffect(() => {
+    const loadTags = async () => {
+      try {
+        const categoriesParam =
+          filters.categories && filters.categories.length
+            ? filters.categories.join(",")
+            : undefined;
+        const res = await fetchTags({ categories: categoriesParam });
+        const tags = res?.tags || res?.data?.tags || [];
+        const options =
+          tags && tags.length
+            ? [{ value: "", label: "Tags" }, ...tags.map((t) => ({ value: t, label: t }))]
+            : [
+                { value: "", label: "Tags" },
+                { value: "Sale", label: "Sale" },
+                { value: "New", label: "New" },
+                { value: "Seasonal", label: "Seasonal" },
+              ];
+
+        setTagOptions(options);
+
+        // clear selected tags if they are no longer in options
+        if (
+          filters.tags &&
+          filters.tags.length &&
+          !filters.tags.every((t) => options.some((o) => o.value === t))
+        ) {
+          setFilters((prev) => ({ ...prev, tags: [] }));
+        }
+      } catch (err) {
+        console.error("Failed to load tags", err);
+      }
+    };
+
+    loadTags();
+    
+  }, [filters.categories]);
+
+  // Load payment methods once
+  useEffect(() => {
+    const loadPayments = async () => {
+      try {
+        const res = await fetchPaymentMethods();
+        const methods = res?.paymentMethods || res?.data?.paymentMethods || [];
+        const options =
+          methods && methods.length
+            ? [{ value: "", label: "Payment Method" }, ...methods.map((m) => ({ value: m, label: m }))]
+            : [
+                { value: "", label: "Payment Method" },
+                { value: "Card", label: "Card" },
+                { value: "Cash", label: "Cash" },
+                { value: "UPI", label: "UPI" },
+              ];
+        setPaymentOptions(options);
+      } catch (err) {
+        console.error("Failed to load payment methods", err);
+      }
+    };
+
+    loadPayments();
+  }, []);
+
+  // Load categories once
+  useEffect(() => {
+    const loadCategories = async () => {
+      try {
+        const res = await fetchCategories();
+        const categories = res?.categories || res?.data?.categories || [];
+        const options =
+          categories && categories.length
+            ? [{ value: "", label: "Product Category" }, ...categories.map((c) => ({ value: c, label: c }))]
+            : [
+                { value: "", label: "Product Category" },
+                { value: "Clothing", label: "Clothing" },
+                { value: "Electronics", label: "Electronics" },
+                { value: "Grocery", label: "Grocery" },
+              ];
+        setCategoryOptions(options);
+      } catch (err) {
+        console.error("Failed to load categories", err);
+      }
+    };
+
+    loadCategories();
+  }, []);
 
   return (
     <div className="app-shell">
@@ -297,7 +407,13 @@ const Dashboard = () => {
                 <FiRefreshCw />
               </span>
             </button>
-            <FilterPanel filters={filters} onChange={handleFiltersChange} />
+            <FilterPanel
+              filters={filters}
+              onChange={handleFiltersChange}
+              tagOptions={tagOptions}
+              categoryOptions={categoryOptions}
+              paymentOptions={paymentOptions}
+            />
           </div>
           <div className="filters-right">
             <SortingDropdown sort={sort} onChange={handleSortChange} />
