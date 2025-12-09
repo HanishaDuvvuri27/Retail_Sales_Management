@@ -25,13 +25,13 @@ async function testAPI(testName, url) {
             console.log(`  Summary - Units Sold: ${json.summary.totalUnitsSold}, Amount: ${json.summary.totalAmount}`);
           }
         } catch (err) {
-          console.log(`\n❌ ${testName}: ${err.message}`);
+          console.log(`\n ${testName}: ${err.message}`);
           console.log(`  Response: ${data.substring(0, 200)}`);
         }
         resolve();
       });
     }).on("error", (err) => {
-      console.log(`\n❌ ${testName}: Connection error - ${err.message}`);
+      console.log(`\n ${testName}: Connection error - ${err.message}`);
       resolve();
     });
   });
@@ -43,7 +43,7 @@ async function runTests() {
     await testAPI(test.name, test.url);
     await new Promise((r) => setTimeout(r, 500));
   }
-  console.log("\n✅ Test suite completed");
+  console.log("\n Test suite completed");
 }
 
 runTests();

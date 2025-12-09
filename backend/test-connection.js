@@ -36,9 +36,9 @@ async function testConnection() {
       console.log("✓ First document:", JSON.stringify(firstDoc, null, 2).substring(0, 500) + "...");
     }
 
-    console.log("\n✅ All tests passed!");
+    console.log("\n All tests passed!");
   } catch (err) {
-    console.error("\n❌ Error:", err.message);
+    console.error("\n Error:", err.message);
     console.error("Full error:", err);
   } finally {
     await client.close();
