@@ -8,6 +8,20 @@ const salesRoutes = require("./routes/salesRoutes");
 const app = express();
 const PORT = process.env.PORT || 5000;
 
+const allowedOrigins = [
+  "https://retail-sales-management-2.onrender.com",
+  "http://localhost:3000",
+];
+
+const corsOptions = {
+  origin(origin, callback) {
+    if (origin && allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    }
+    return callback(new Error("Not allowed by CORS"));
+  },
+};
+
 // Global error handlers
 process.on("unhandledRejection", (reason, promise) => {
   console.error("Unhandled Rejection at:", promise, "reason:", reason);
@@ -18,7 +32,7 @@ process.on("uncaughtException", (error) => {
   process.exit(1);
 });
 
-app.use(cors());
+app.use(cors(corsOptions));
 app.use(express.json());
 
 // Request logging middleware
