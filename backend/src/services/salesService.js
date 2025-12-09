@@ -284,8 +284,15 @@ async function getSales(rawOptions) {
       ];
     }
 
+    const order = sortOrder === "asc" ? 1 : -1;
     const sortObj = {};
-    sortObj.Date = sortOrder === "asc" ? 1 : -1;
+    if (sortBy === "quantity") {
+      sortObj.Quantity = order;
+    } else if (sortBy === "customerName") {
+      sortObj["Customer Name"] = order;
+    } else {
+      sortObj.Date = order;
+    }
 
     const currentPage = page || 1;
     const size = pageSize || 10;
