@@ -6,7 +6,7 @@ const { setSalesData } = require("./dataStore");
 const salesRoutes = require("./routes/salesRoutes");
 
 const app = express();
-const PORT = 5000;
+const PORT = process.env.PORT || 5000;
 
 // Global error handlers
 process.on("unhandledRejection", (reason, promise) => {
