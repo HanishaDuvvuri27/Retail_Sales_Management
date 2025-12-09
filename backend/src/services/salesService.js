@@ -300,6 +300,23 @@ async function getSales(rawOptions) {
             { $limit: size },
           ],
           totalCount: [{ $count: "count" }],
+          summary: [
+            {
+              $group: {
+                _id: null,
+                totalUnitsSold: { $sum: { $ifNull: ["$Quantity", 0] } },
+                totalAmount: { $sum: { $ifNull: ["$Total Amount", 0] } },
+                totalDiscount: {
+                  $sum: {
+                    $subtract: [
+                      { $ifNull: ["$Total Amount", 0] },
+                      { $ifNull: ["$Final Amount", 0] },
+                    ],
+                  },
+                },
+              },
+            },
+          ],
         },
       },
     ];
@@ -307,12 +324,16 @@ async function getSales(rawOptions) {
     const result = await coll.aggregate(pipeline).toArray();
     const res = result[0] || {};
 
+    const summary =
+      res.summary?.[0] || { totalUnitsSold: 0, totalAmount: 0, totalDiscount: 0 };
+
     return {
       data: res.data || [],
       totalItems: res.totalCount?.[0]?.count || 0,
       page: currentPage,
       pageSize: size,
       totalPages: Math.ceil((res.totalCount?.[0]?.count || 0) / size),
+      summary,
     };
   } catch (err) {
     console.log("Mongo failed, using memory:", err.message);
