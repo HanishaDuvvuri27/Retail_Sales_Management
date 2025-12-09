@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import Header from "../components/Header";
 import SearchBar from "../components/SearchBar";
 import FilterPanel from "../components/FilterPanel";
@@ -21,6 +21,50 @@ const defaultSummary = {
   totalAmount: 0,
   totalDiscount: 0,
 };
+
+// helper: normalize numbers from various shapes (number, "123", {$numberInt: "5"}, {$numberDouble: "5.5"}, {$numberLong:".."})
+function parseNumber(val) {
+  if (val == null) return 0;
+  if (typeof val === "number") return val;
+  if (typeof val === "string") {
+    const n = Number(val);
+    return isNaN(n) ? 0 : n;
+  }
+  // handle Mongo export objects
+  if (typeof val === "object") {
+    // common keys
+    if (val.$numberInt) return parseNumber(val.$numberInt);
+    if (val.$numberDouble) return parseNumber(val.$numberDouble);
+    if (val.$numberLong) return parseNumber(val.$numberLong);
+    // some shapes: { "$numberDecimal": "123.45" }
+    if (val.$numberDecimal) return parseNumber(val.$numberDecimal);
+    // fallback: try valueOf or JSON conversion
+    try {
+      const maybe = Number(val.valueOf && val.valueOf());
+      return isNaN(maybe) ? 0 : maybe;
+    } catch (e) {
+      return 0;
+    }
+  }
+  return 0;
+}
+
+// compute summary from rows if backend summary missing
+function computeSummaryFromRows(rows) {
+  const acc = { totalUnitsSold: 0, totalAmount: 0, totalDiscount: 0 };
+  if (!Array.isArray(rows)) return acc;
+
+  for (const r of rows) {
+    const qty = parseNumber(r.Quantity ?? r.quantity ?? r.qty ?? 0);
+    const totalAmt = parseNumber(r["Total Amount"] ?? r.totalAmount ?? r.total ?? 0);
+    const finalAmt = parseNumber(r["Final Amount"] ?? r.finalAmount ?? r.final ?? 0);
+    acc.totalUnitsSold += qty;
+    acc.totalAmount += totalAmt;
+    acc.totalDiscount += (totalAmt - finalAmt);
+  }
+
+  return acc;
+}
 
 const Dashboard = () => {
   const [search, setSearch] = useState("");
@@ -71,72 +115,113 @@ const Dashboard = () => {
     { value: "Grocery", label: "Grocery" },
   ]);
 
-  useEffect(() => {
-    const load = async () => {
-      try {
-        setLoading(true);
-        setError("");
+  const loadSales = useCallback(async () => {
+    try {
+      setLoading(true);
+      setError("");
 
-        // Parse age range into Min/Max
-        let ageMin = undefined;
-        let ageMax = undefined;
-        if (filters.ageRange) {
-          const ageParts = filters.ageRange.split("-");
-          if (ageParts.length === 2) {
-            ageMin = parseInt(ageParts[0], 10);
-            ageMax = parseInt(ageParts[1], 10);
-          }
+      // Parse age range into Min/Max
+      let ageMin = undefined;
+      let ageMax = undefined;
+      if (filters.ageRange) {
+        const ageParts = String(filters.ageRange).split("-");
+        if (ageParts.length === 2) {
+          ageMin = parseInt(ageParts[0], 10);
+          ageMax = parseInt(ageParts[1], 10);
         }
-
-        const params = {
-          search: search || undefined,
-          regions:
-            filters.regions && filters.regions.length
-              ? filters.regions.join(",")
-              : undefined,
-          genders:
-            filters.genders && filters.genders.length
-              ? filters.genders.join(",")
-              : undefined,
-          ageMin: ageMin || undefined,
-          ageMax: ageMax || undefined,
-          categories:
-            filters.categories && filters.categories.length
-              ? filters.categories.join(",")
-              : undefined,
-          tags:
-            filters.tags && filters.tags.length
-              ? filters.tags.join(",")
-              : undefined,
-          paymentMethods:
-            filters.paymentMethods && filters.paymentMethods.length
-              ? filters.paymentMethods.join(",")
-              : undefined,
-          dateFrom: filters.dateFrom || undefined,
-          dateTo: filters.dateTo || undefined,
-          sortBy: sort.sortBy,
-          sortOrder: sort.sortOrder,
-          page,
-          pageSize,
-        };
-
-        const payload = (await fetchSales(params)) || {};
-
-        setRows(payload.data || []);
-        setSummary(payload.summary || defaultSummary);
-        setTotalPages(payload.totalPages || 1);
-      } catch (e) {
-        console.error(e);
-        setError("Failed to load sales data");
-      } finally {
-        setLoading(false);
       }
-    };
 
-    load();
+      const params = {
+        search: search || undefined,
+        regions:
+          filters.regions && filters.regions.length
+            ? filters.regions.join(",")
+            : undefined,
+        genders:
+          filters.genders && filters.genders.length
+            ? filters.genders.join(",")
+            : undefined,
+        ageMin: ageMin || undefined,
+        ageMax: ageMax || undefined,
+        categories:
+          filters.categories && filters.categories.length
+            ? filters.categories.join(",")
+            : undefined,
+        tags:
+          filters.tags && filters.tags.length
+            ? filters.tags.join(",")
+            : undefined,
+        paymentMethods:
+          filters.paymentMethods && filters.paymentMethods.length
+            ? filters.paymentMethods.join(",")
+            : undefined,
+        dateFrom: filters.dateFrom || undefined,
+        dateTo: filters.dateTo || undefined,
+        sortBy: sort.sortBy,
+        sortOrder: sort.sortOrder,
+        page,
+        pageSize,
+      };
 
+      const payload = (await fetchSales(params)) || {};
+
+      // rows might be in payload.data or payload.data.data depending on API shape; handle common shapes
+      const returnedRows = payload.data ?? payload.rows ?? payload.results ?? [];
+
+      // Normalize rows array (ensure it's an array)
+      const normalizedRows = Array.isArray(returnedRows) ? returnedRows : [];
+
+      setRows(normalizedRows);
+
+      // Try to use server-provided summary, but normalize numbers and fallback to computed if missing/zero
+      const srvSummary = payload.summary || payload.summaryData || payload.summary || null;
+      let finalSummary = defaultSummary;
+
+      if (srvSummary && (srvSummary.totalUnitsSold != null || srvSummary.totalAmount != null || srvSummary.totalDiscount != null)) {
+        finalSummary = {
+          totalUnitsSold: parseNumber(srvSummary.totalUnitsSold),
+          totalAmount: parseNumber(srvSummary.totalAmount),
+          totalDiscount: parseNumber(srvSummary.totalDiscount),
+        };
+      } else if (payload.summary && typeof payload.summary === "object") {
+        // extra fallback
+        finalSummary = {
+          totalUnitsSold: parseNumber(payload.summary.totalUnitsSold),
+          totalAmount: parseNumber(payload.summary.totalAmount),
+          totalDiscount: parseNumber(payload.summary.totalDiscount),
+        };
+      } else {
+        // compute from rows
+        finalSummary = computeSummaryFromRows(normalizedRows);
+      }
+
+      setSummary(finalSummary);
+
+      // totalPages fallback: prefer payload.totalPages, else compute from totalItems
+      const totalPagesFromPayload = payload.totalPages || payload.total_pages || null;
+      const totalItemsFromPayload = payload.totalItems ?? payload.totalCount ?? payload.total ?? null;
+      if (totalPagesFromPayload != null) {
+        setTotalPages(Number(totalPagesFromPayload) || 1);
+      } else if (totalItemsFromPayload != null) {
+        setTotalPages(Math.max(1, Math.ceil(Number(totalItemsFromPayload) / pageSize)));
+      } else {
+        // best-effort: if payload returned fewer than pageSize and page ===1, totalPages =1
+        setTotalPages( Math.max(1, Math.ceil((payload.data?.length || normalizedRows.length) / pageSize)) );
+      }
+    } catch (e) {
+      console.error(e);
+      setError("Failed to load sales data");
+      setRows([]);
+      setSummary(defaultSummary);
+      setTotalPages(1);
+    } finally {
+      setLoading(false);
+    }
   }, [search, filters, sort, page]);
 
+  useEffect(() => {
+    loadSales();
+  }, [loadSales]);
 
   useEffect(() => {
     const handleClickOutside = (e) => {
@@ -184,7 +269,7 @@ const Dashboard = () => {
             ? filters.categories.join(",")
             : undefined;
         const res = await fetchTags({ categories: categoriesParam });
-        const tags = res?.tags || res?.data?.tags || [];
+        const tags = res?.tags || res?.data?.tags || res?.data || res?.tagsList || [];
         const options =
           tags && tags.length
             ? [{ value: "", label: "Tags" }, ...tags.map((t) => ({ value: t, label: t }))]
@@ -211,7 +296,6 @@ const Dashboard = () => {
     };
 
     loadTags();
-    
   }, [filters.categories]);
 
   // Load payment methods once
@@ -264,7 +348,6 @@ const Dashboard = () => {
 
   return (
     <div className="app-shell">
-      
       <aside className="sidebar">
         <div
           className="sidebar-header"
@@ -308,7 +391,6 @@ const Dashboard = () => {
         )}
 
         <nav className="sidebar-nav">
-
           <div className="sidebar-section">
             <button
               type="button"
@@ -322,25 +404,21 @@ const Dashboard = () => {
             {servicesOpen && (
               <>
                 <button className="sidebar-item">
-                  
                   <span>Pre-active</span>
                 </button>
                 <button className="sidebar-item">
-                 
                   <span>Active</span>
                 </button>
                 <button className="sidebar-item">
-                  
                   <span>Blocked</span>
                 </button>
                 <button className="sidebar-item">
-                  
                   <span>Closed</span>
                 </button>
               </>
             )}
           </div>
-            <div className="sidebar-section">
+          <div className="sidebar-section">
             <button
               type="button"
               className="sidebar-section-title"
@@ -353,26 +431,20 @@ const Dashboard = () => {
             {invoicesOpen && (
               <>
                 <button className="sidebar-item">
-                  
                   <span>Proforma Invoices</span>
                 </button>
                 <button className="sidebar-item">
-                
                   <span>Final Invoices</span>
                 </button>
                 <button className="sidebar-item">
-                 
                   <span>Blocked</span>
                 </button>
-               
               </>
             )}
           </div>
-          
         </nav>
       </aside>
 
-      
       <div className="main-content">
         <div className="page-header">
           <Header />
@@ -381,7 +453,6 @@ const Dashboard = () => {
           </div>
         </div>
 
-        
         <div className="filters-row">
           <div className="filters-left">
             <button
@@ -417,19 +488,15 @@ const Dashboard = () => {
           </div>
           <div className="filters-right">
             <SortingDropdown sort={sort} onChange={handleSortChange} />
-            
           </div>
         </div>
 
-        
         <SummaryCards summary={summary} />
 
-        
         <div className="table-card">
           <TransactionsTable rows={rows} loading={loading} error={error} />
         </div>
 
-        
         <div className="pagination-row">
           <Pagination page={page} totalPages={totalPages} onPageChange={handlePageChange} />
         </div>
