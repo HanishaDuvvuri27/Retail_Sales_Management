@@ -140,7 +140,8 @@ const Dashboard = () => {
 
   useEffect(() => {
     const handleClickOutside = (e) => {
-      // Find the sidebar element
+      const mainContent = document.querySelector(".main-content");
+      if (mainContent && mainContent.contains(e.target)) return;
       const sidebar = headerRef.current?.closest(".sidebar");
       if (sidebar && !sidebar.contains(e.target)) {
         setHeaderOpen(false);
